@@ -84,7 +84,10 @@ async function fetchSheetData() {
   const response = await fetch(url);
   const text = await response.text();
   const rows = text.split("\n").slice(1);
-  return rows.map(row => row.split(","));
+  return rows.map(row =>
+  row.split(",").map(cell => cell.trim())
+);
+
 }
 
 /* ===== BUSINESS LOGIC ===== */
@@ -99,11 +102,12 @@ async function handleQuery(text) {
 
   const data = await fetchSheetData();
 
-  const row = data.find(r =>
-    r[0] === TEAM &&
-    r[1] === period &&
-    r[2] === metric
-  );
+const row = data.find(r =>
+  r[0].toUpperCase() === TEAM.toUpperCase() &&
+  r[1].toUpperCase() === period.toUpperCase() &&
+  r[2].toUpperCase() === metric.toUpperCase()
+);
+
 
   if (!row) {
     speak("No data found for your request.");
@@ -150,3 +154,4 @@ function format(num) {
 
 </body>
 </html>
+
