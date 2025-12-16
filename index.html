@@ -90,6 +90,15 @@ async function fetchSheetData() {
 
 }
 
+  function normalize(value) {
+  return value
+    .toString()
+    .replace(/\u00A0/g, " ")   // remove non-breaking spaces
+    .trim()
+    .toUpperCase();
+}
+
+
 /* ===== BUSINESS LOGIC ===== */
 async function handleQuery(text) {
   const metric = detectMetric(text);
@@ -108,9 +117,9 @@ console.log("METRIC =", metric);
 console.log("DATA =", data);
 
 const row = data.find(r =>
-  r[0].toUpperCase() === TEAM.toUpperCase() &&
-  r[1].toUpperCase() === period.toUpperCase() &&
-  r[2].toUpperCase() === metric.toUpperCase()
+  normalize(r[0]) === normalize(TEAM) &&
+  normalize(r[1]) === normalize(period) &&
+  normalize(r[2]) === normalize(metric)
 );
 
 
@@ -159,6 +168,7 @@ function format(num) {
 
 </body>
 </html>
+
 
 
 
