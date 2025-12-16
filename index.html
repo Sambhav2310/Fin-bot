@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Finance Voice Assistant (MVP)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      background: #22c55e;
+      border: none;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    #output {
+      background: #020617;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 10px;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Finance Voice Assistant</h2>
+
+<button onclick="startListening()">🎤 Ask a question</button>
+
+<div id="output">Waiting for your question...</div>
+
+<script>
+/* ===== CONFIG ===== */
+const TEAM = "BT"; // Hardcoded for MVP
+const SHEET_ID = "1bNTs4heX5krItzbu90Ro-HCGgak9DGyEIBqc5oQBLSA";
+const SHEET_NAME = "FINANCE_METRICS";
+
+/* ===== VOICE INPUT ===== */
+function startListening() {
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = "en-IN";
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript.toLowerCase();
+    document.getElementById("output").innerText = "You asked: " + text;
+    handleQuery(text);
+  };
+  recognition.start();
+}
+
+/* ===== INTENT DETECTION ===== */
+function detectMetric(text) {
+  if (text.includes("revenue")) return "Revenue";
+  if (text.includes("outstanding")) return "Outstanding";
+  if (text.includes("unbilled")) return "Unbilled";
+  if (text.includes("salary")) return "Salary";
+  return null;
+}
+
+function detectPeriod(text) {
+  if (text.includes("q1")) return "Q1";
+  if (text.includes("q2")) return "Q2";
+  if (text.includes("q3")) return "Q3";
+  if (text.includes("q4")) return "Q4";
+  if (text.includes("month")) return "MTD";
+  if (text.includes("year")) return "YTD";
+  return "Q3"; // default
+}
+
+/* ===== DATA FETCH ===== */
+async function fetchSheetData() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+  const response = await fetch(url);
+  const text = await response.text();
+  const rows = text.split("\n").slice(1);
+  return rows.map(row => row.split(","));
+}
+
+/* ===== BUSINESS LOGIC ===== */
+async function handleQuery(text) {
+  const metric = detectMetric(text);
+  const period = detectPeriod(text);
+
+  if (!metric) {
+    speak("Sorry, I could not understand the metric.");
+    return;
+  }
+
+  const data = await fetchSheetData();
+
+  const row = data.find(r =>
+    r[0] === TEAM &&
+    r[1] === period &&
+    r[2] === metric
+  );
+
+  if (!row) {
+    speak("No data found for your request.");
+    return;
+  }
+
+  const achieved = Number(row[3]);
+  const target = Number(row[4]);
+
+  let responseText = "";
+
+  if (metric === "Revenue") {
+    const gap = target - achieved;
+    const percent = ((achieved / target) * 100).toFixed(1);
+
+    responseText =
+      `${period} Revenue – Team ${TEAM}\n\n` +
+      `Achieved: ₹${format(achieved)}\n` +
+      `Target: ₹${format(target)}\n` +
+      `Gap: ₹${format(gap)}\n` +
+      `Achievement: ${percent}%`;
+
+  } else {
+    responseText =
+      `${period} ${metric} – Team ${TEAM}\n\n` +
+      `Amount: ₹${format(achieved)}`;
+  }
+
+  document.getElementById("output").innerText = responseText;
+  speak(responseText);
+}
+
+/* ===== VOICE OUTPUT ===== */
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  speechSynthesis.speak(msg);
+}
+
+/* ===== FORMAT ===== */
+function format(num) {
+  return (num / 10000000).toFixed(2) + " Cr";
+}
+</script>
+
+</body>
+</html>
