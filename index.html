@@ -101,6 +101,7 @@ async function handleQuery(text) {
   }
 
   const data = await fetchSheetData();
+console.log(data)
 
 const row = data.find(r =>
   r[0].toUpperCase() === TEAM.toUpperCase() &&
@@ -154,4 +155,5 @@ function format(num) {
 
 </body>
 </html>
+
 
