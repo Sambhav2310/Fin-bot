@@ -14,6 +14,7 @@
       --risk-high: #ff6b6b;
       --risk-mod: #ffb020;
       --risk-low: #3ddc97;
+      --listening: #3ddc97;
     }
     * { box-sizing: border-box; }
     body {
@@ -35,6 +36,18 @@
     }
     .command .prompt { font-size: 20px; letter-spacing: .02em; }
     .command .sub { color: var(--muted); margin-top: 6px; }
+    .command.listening { box-shadow: 0 0 0 1px var(--listening), 0 0 18px rgba(61,220,151,.35); }
+    .command.processing { box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(106,166,255,.35); }
+    .pulse {
+      display: inline-block; width: 8px; height: 8px; margin-left: 8px;
+      border-radius: 50%; background: var(--listening);
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: .4; transform: scale(.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: .4; transform: scale(.9); }
+    }
     .grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; }
     .panel {
       background: var(--panel); border: 1px solid #1f2550; border-radius: 14px; padding: 20px;
@@ -61,7 +74,7 @@
   <main>
     <section class="command">
       <div class="prompt">Speak a command</div>
-      <div class="sub" id="listenState">Listening…</div>
+      <div class="sub" id="listenState">Ready</div>
     </section>
 
     <section class="grid">
@@ -104,10 +117,49 @@
     // ===== VOICE =====
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recog = SpeechRecognition ? new SpeechRecognition() : null;
+    const cmdBox = document.querySelector('.command');
+    const listenState = document.getElementById('listenState');
+
     if (recog) {
-      recog.continuous = true; recog.interimResults = false; recog.lang = 'en-IN';
-      recog.onresult = e => routeCommand(e.results[e.results.length - 1][0].transcript.toLowerCase());
-      recog.onend = () => recog.start(); recog.start();
+      recog.continuous = true;
+      recog.interimResults = false;
+      recog.lang = 'en-US';
+
+      recog.onstart = () => {
+        cmdBox.classList.remove('processing');
+        cmdBox.classList.add('listening');
+        listenState.innerHTML = 'Listening<span class="pulse"></span>';
+      };
+
+      recog.onend = () => {
+        cmdBox.classList.remove('listening');
+        listenState.textContent = 'Ready';
+        setTimeout(() => recog.start(), 300); // re-arm mic
+      };
+
+      recog.onresult = e => {
+        cmdBox.classList.remove('listening');
+        cmdBox.classList.add('processing');
+        listenState.textContent = 'Processing…';
+        const text = e.results[e.results.length - 1][0].transcript;
+        routeCommand(text);
+      };
+
+      recog.start();
+    } else {
+      listenState.textContent = 'Voice not supported in this browser.';
+    } // auto-restart
+      };
+
+      recog.onresult = e => {
+        const text = e.results[e.results.length - 1][0].transcript;
+        routeCommand(text);
+      };
+
+      recog.start();
+    } else {
+      listenState.textContent = 'Voice not supported in this browser.';
+    } recog.start();
     } else {
       document.getElementById('listenState').textContent = 'Voice not supported in this browser.';
     }
@@ -116,11 +168,11 @@
       const u = new SpeechSynthesisUtterance(text);
       // Prefer natural voices if available
       const voices = speechSynthesis.getVoices();
-      const preferred = voices.find(v => /Google|Natural|Neural/i.test(v.name)) || voices.find(v => v.lang === 'en-US') || voices[0];
+      const preferred = voices.find(v => /Google|Natural|Neural/i.test(v.name)) || voices.find(v => v.lang === 'en-IN') || voices[0];
       if (preferred) u.voice = preferred;
       u.rate = 0.95; // less robotic, still executive
       u.pitch = 1;
-      u.lang = 'en-US';
+      u.lang = 'en-IN';
       speechSynthesis.cancel();
       speechSynthesis.speak(u);
     }
@@ -225,5 +277,3 @@
   </script>
 </body>
 </html>
-
-
