@@ -114,8 +114,15 @@
 
     function speak(text) {
       const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.85; u.pitch = 1; u.lang = 'en-IN';
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
+      // Prefer natural voices if available
+      const voices = speechSynthesis.getVoices();
+      const preferred = voices.find(v => /Google|Natural|Neural/i.test(v.name)) || voices.find(v => v.lang === 'en-IN') || voices[0];
+      if (preferred) u.voice = preferred;
+      u.rate = 0.95; // less robotic, still executive
+      u.pitch = 1;
+      u.lang = 'en-IN';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
     }
 
     // ===== RENDER HELPERS =====
@@ -143,12 +150,14 @@
 
     // ===== COMMAND ROUTER =====
     function routeCommand(text) {
-      if (text.includes('what needs attention')) return attention();
-      if (text.includes('revenue performance')) return revenue();
-      if (text.includes('revenue quality')) return quality();
-      if (text.includes('unbilled')) return unbilled();
-      if (text.includes('salary')) return salary();
-      if (text.includes('profit')) return profitability();
+      const t = text.toLowerCase().trim();
+      // Normalize common variants
+      if (t.includes('what needs attention') || t.includes('needs attention')) return attention();
+      if (t.includes('revenue performance') || t.includes('revenue status')) return revenue();
+      if (t.includes('revenue quality')) return quality();
+      if (t.includes('unbilled exposure') || t.includes('unbilled') || t.includes('yet unbilled')) return unbilled();
+      if (t.includes('salary pressure') || t.includes('salary')) return salary();
+      if (t.includes('profitability') || t.includes('profit')) return profitability();
     }
 
     // ===== VIEWS =====
