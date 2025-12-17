@@ -116,7 +116,7 @@
       const u = new SpeechSynthesisUtterance(text);
       // Prefer natural voices if available
       const voices = speechSynthesis.getVoices();
-      const preferred = voices.find(v => /Google|Natural|Neural/i.test(v.name)) || voices.find(v => v.lang === 'en-IN') || voices[0];
+      const preferred = voices.find(v => /Google|Natural|Neural/i.test(v.name)) || voices.find(v => v.lang === 'en-US') || voices[0];
       if (preferred) u.voice = preferred;
       u.rate = 0.95; // less robotic, still executive
       u.pitch = 1;
@@ -225,4 +225,5 @@
   </script>
 </body>
 </html>
+
 
