@@ -165,6 +165,7 @@
       'Revenue performance is materially behind plan. Achieving the six-month target will require accelerated billing.';
     setRisk('high');
     speak('Revenue performance is materially behind plan and requires accelerated billing.');
+    setTimeout(exitProcessing, 300);
   }
 
   function quality() {
@@ -177,6 +178,7 @@
       'A portion of achieved revenue is accrual driven and includes unbilled components.';
     setRisk('mod');
     speak('A portion of achieved revenue is accrual driven and includes unbilled components.');
+    setTimeout(exitProcessing, 300);
   }
 
   function unbilled() {
@@ -189,6 +191,7 @@
       'Unbilled exposure remains elevated and concentrated.';
     setRisk('mod');
     speak('Unbilled exposure remains elevated and concentrated.');
+    setTimeout(exitProcessing, 300);
   }
 
   function salary() {
@@ -203,6 +206,7 @@
       'Salary costs are high relative to revenue, exerting pressure on profitability.';
     setRisk('high');
     speak('Salary costs are high relative to revenue and exert pressure on profitability.');
+    setTimeout(exitProcessing, 300);
   }
 
   function profitability() { salary(); }
@@ -214,18 +218,50 @@
       'Immediate attention is required on accelerating revenue closure and reducing unbilled exposure.';
     setRisk('high');
     speak('Immediate attention is required on accelerating revenue closure and reducing unbilled exposure.');
+    setTimeout(exitProcessing, 300);
   }
 
+    function exitProcessing() {
+  cmdBox.classList.remove('processing');
+  listenState.textContent = 'Ready';
+}
+
+
   // ===== COMMAND ROUTER =====
-  function routeCommand(text) {
-    const t = text.toLowerCase().trim();
-    if (t.includes('what needs attention') || t.includes('needs attention')) return attention();
-    if (t.includes('revenue performance') || t.includes('revenue')) return revenue();
-    if (t.includes('revenue quality')) return quality();
-    if (t.includes('unbilled')) return unbilled();
-    if (t.includes('salary')) return salary();
-    if (t.includes('profit')) return profitability();
+ function routeCommand(text) {
+  const t = text.toLowerCase().trim();
+  console.log('Heard:', t);
+
+  if (t.includes('what needs attention') || t.includes('needs attention')) {
+    return attention();
   }
+
+  if (t.includes('revenue quality')) {
+    return quality();
+  }
+
+  if (t.includes('unbilled')) {
+    return unbilled();
+  }
+
+  if (t.includes('salary')) {
+    return salary();
+  }
+
+  if (t.includes('revenue performance') || t === 'revenue') {
+    return revenue();
+  }
+
+  if (t.includes('profit')) {
+    return profitability();
+  }
+
+  // Fallback
+  insightEl.textContent = 'Command not recognised. Please try again.';
+  setRisk('mod');
+  speak('Command not recognised. Please try again.');
+}
+
 
   // ===== VOICE ENGINE =====
   const SpeechRecognition =
@@ -265,6 +301,7 @@
 
 </body>
 </html>
+
 
 
 
