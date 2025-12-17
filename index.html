@@ -95,6 +95,7 @@
   </main>
 
   <script>
+  // ===== DATA =====
   const DATA = {
     revenue: {
       target: 80000000,
@@ -113,28 +114,16 @@
     }
   };
 
-  function speak(text) {
-    const u = new SpeechSynthesisUtterance(text);
-    const voices = speechSynthesis.getVoices();
-    const preferred =
-      voices.find(v => /Google|Natural|Neural/i.test(v.name)) ||
-      voices.find(v => v.lang === 'en-US') ||
-      voices[0];
-
-    if (preferred) u.voice = preferred;
-    u.rate = 0.95;
-    u.lang = 'en-US';
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }
-
-  function money(v) { return '₹' + (v / 10000000).toFixed(2) + ' Cr'; }
-  function lakhs(v) { return '₹' + (v / 100000).toFixed(0) + ' L'; }
-
+  // ===== HELPERS =====
   const kpisEl = document.getElementById('kpis');
   const insightEl = document.getElementById('insight');
   const riskEl = document.getElementById('risk');
   const titleEl = document.getElementById('panelTitle');
+  const cmdBox = document.querySelector('.command');
+  const listenState = document.getElementById('listenState');
+
+  function money(v) { return '₹' + (v / 10000000).toFixed(2) + ' Cr'; }
+  function lakhs(v) { return '₹' + (v / 100000).toFixed(0) + ' L'; }
 
   function setRisk(level) {
     riskEl.className = 'risk ' + level;
@@ -148,6 +137,21 @@
     });
   }
 
+  function speak(text) {
+    const u = new SpeechSynthesisUtterance(text);
+    const voices = speechSynthesis.getVoices();
+    const preferred =
+      voices.find(v => /Google|Natural|Neural/i.test(v.name)) ||
+      voices.find(v => v.lang === 'en-US') ||
+      voices[0];
+    if (preferred) u.voice = preferred;
+    u.rate = 0.95;
+    u.lang = 'en-US';
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+
+  // ===== VIEWS =====
   function revenue() {
     titleEl.textContent = 'REVENUE PERFORMANCE — APR–SEP 2025';
     renderKPIs([
@@ -163,6 +167,18 @@
     speak('Revenue performance is materially behind plan and requires accelerated billing.');
   }
 
+  function quality() {
+    titleEl.textContent = 'REVENUE QUALITY';
+    renderKPIs([
+      ['Reported Revenue', money(DATA.revenue.achieved)],
+      ['Accrued Achieved', money(DATA.quality.accruedAchieved)]
+    ]);
+    insightEl.textContent =
+      'A portion of achieved revenue is accrual driven and includes unbilled components.';
+    setRisk('mod');
+    speak('A portion of achieved revenue is accrual driven and includes unbilled components.');
+  }
+
   function unbilled() {
     titleEl.textContent = 'UNBILLED EXPOSURE — AS OF SEP 2025';
     renderKPIs([
@@ -170,22 +186,51 @@
       ['Concentration', DATA.unbilled.concentration]
     ]);
     insightEl.textContent =
-      'Unbilled exposure remains elevated and concentrated among a limited number of retainers.';
+      'Unbilled exposure remains elevated and concentrated.';
     setRisk('mod');
     speak('Unbilled exposure remains elevated and concentrated.');
   }
 
-  function routeCommand(text) {
-    const t = text.toLowerCase();
-    if (t.includes('unbilled')) return unbilled();
-    if (t.includes('revenue')) return revenue();
+  function salary() {
+    titleEl.textContent = 'COST & PROFITABILITY';
+    renderKPIs([
+      ['Salary Disbursed', money(DATA.salary.disbursed)],
+      ['Salary to Revenue Ratio', DATA.salary.ratio + '%'],
+      ['Actual Profit Margin', DATA.salary.profit + '%'],
+      ['Targeted Margin', DATA.salary.targetProfit + '%']
+    ]);
+    insightEl.textContent =
+      'Salary costs are high relative to revenue, exerting pressure on profitability.';
+    setRisk('high');
+    speak('Salary costs are high relative to revenue and exert pressure on profitability.');
   }
 
+  function profitability() { salary(); }
+
+  function attention() {
+    titleEl.textContent = 'EXECUTIVE SUMMARY';
+    renderKPIs([]);
+    insightEl.textContent =
+      'Immediate attention is required on accelerating revenue closure and reducing unbilled exposure.';
+    setRisk('high');
+    speak('Immediate attention is required on accelerating revenue closure and reducing unbilled exposure.');
+  }
+
+  // ===== COMMAND ROUTER =====
+  function routeCommand(text) {
+    const t = text.toLowerCase().trim();
+    if (t.includes('what needs attention') || t.includes('needs attention')) return attention();
+    if (t.includes('revenue performance') || t.includes('revenue')) return revenue();
+    if (t.includes('revenue quality')) return quality();
+    if (t.includes('unbilled')) return unbilled();
+    if (t.includes('salary')) return salary();
+    if (t.includes('profit')) return profitability();
+  }
+
+  // ===== VOICE ENGINE =====
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
   const recog = SpeechRecognition ? new SpeechRecognition() : null;
-  const cmdBox = document.querySelector('.command');
-  const listenState = document.getElementById('listenState');
 
   if (recog) {
     recog.continuous = true;
@@ -210,10 +255,16 @@
     };
 
     recog.start();
+  } else {
+    listenState.textContent = 'Voice not supported in this browser.';
   }
+
+  // Default view
+  revenue();
 </script>
 
 </body>
 </html>
+
 
 
