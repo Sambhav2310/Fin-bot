@@ -95,185 +95,125 @@
   </main>
 
   <script>
-    // ===== DATA (wired from your sheets outputs) =====
-    const DATA = {
-      revenue: {
-        target: 80000000,
-        achieved: 22600000,
-        achievementPct: 28.25,
-        balance: 57400000,
-        reqRunRate: 9566667
-      },
-      quality: { accruedAchieved: 26131500 },
-      unbilled: { total: 3531500, concentration: 'Few high-value retainers' },
-      salary: {
-        disbursed: 12000000,
-        ratio: 53.10,
-        profit: 15.93,
-        targetProfit: 40.01
-      }
+  const DATA = {
+    revenue: {
+      target: 80000000,
+      achieved: 22600000,
+      achievementPct: 28.25,
+      balance: 57400000,
+      reqRunRate: 9566667
+    },
+    quality: { accruedAchieved: 26131500 },
+    unbilled: { total: 3531500, concentration: 'Few high-value retainers' },
+    salary: {
+      disbursed: 12000000,
+      ratio: 53.10,
+      profit: 15.93,
+      targetProfit: 40.01
+    }
+  };
+
+  function speak(text) {
+    const u = new SpeechSynthesisUtterance(text);
+    const voices = speechSynthesis.getVoices();
+    const preferred =
+      voices.find(v => /Google|Natural|Neural/i.test(v.name)) ||
+      voices.find(v => v.lang === 'en-US') ||
+      voices[0];
+
+    if (preferred) u.voice = preferred;
+    u.rate = 0.95;
+    u.lang = 'en-US';
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+
+  function money(v) { return '₹' + (v / 10000000).toFixed(2) + ' Cr'; }
+  function lakhs(v) { return '₹' + (v / 100000).toFixed(0) + ' L'; }
+
+  const kpisEl = document.getElementById('kpis');
+  const insightEl = document.getElementById('insight');
+  const riskEl = document.getElementById('risk');
+  const titleEl = document.getElementById('panelTitle');
+
+  function setRisk(level) {
+    riskEl.className = 'risk ' + level;
+    riskEl.textContent = 'RISK LEVEL: ' + level.toUpperCase();
+  }
+
+  function renderKPIs(items) {
+    kpisEl.innerHTML = '';
+    items.forEach(([k, v]) => {
+      kpisEl.innerHTML += `<div class="k">${k}</div><div class="v">${v}</div>`;
+    });
+  }
+
+  function revenue() {
+    titleEl.textContent = 'REVENUE PERFORMANCE — APR–SEP 2025';
+    renderKPIs([
+      ['Net Target (6 months)', money(DATA.revenue.target)],
+      ['Achieved', money(DATA.revenue.achieved)],
+      ['Achievement', DATA.revenue.achievementPct + '%'],
+      ['Balance to Close', money(DATA.revenue.balance)],
+      ['Required Monthly Run Rate', lakhs(DATA.revenue.reqRunRate)]
+    ]);
+    insightEl.textContent =
+      'Revenue performance is materially behind plan. Achieving the six-month target will require accelerated billing.';
+    setRisk('high');
+    speak('Revenue performance is materially behind plan and requires accelerated billing.');
+  }
+
+  function unbilled() {
+    titleEl.textContent = 'UNBILLED EXPOSURE — AS OF SEP 2025';
+    renderKPIs([
+      ['Total Unbilled', money(DATA.unbilled.total)],
+      ['Concentration', DATA.unbilled.concentration]
+    ]);
+    insightEl.textContent =
+      'Unbilled exposure remains elevated and concentrated among a limited number of retainers.';
+    setRisk('mod');
+    speak('Unbilled exposure remains elevated and concentrated.');
+  }
+
+  function routeCommand(text) {
+    const t = text.toLowerCase();
+    if (t.includes('unbilled')) return unbilled();
+    if (t.includes('revenue')) return revenue();
+  }
+
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recog = SpeechRecognition ? new SpeechRecognition() : null;
+  const cmdBox = document.querySelector('.command');
+  const listenState = document.getElementById('listenState');
+
+  if (recog) {
+    recog.continuous = true;
+    recog.lang = 'en-US';
+
+    recog.onstart = () => {
+      cmdBox.classList.add('listening');
+      listenState.innerHTML = 'Listening<span class="pulse"></span>';
     };
 
-    // ===== VOICE =====
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recog = SpeechRecognition ? new SpeechRecognition() : null;
-    const cmdBox = document.querySelector('.command');
-    const listenState = document.getElementById('listenState');
+    recog.onresult = e => {
+      cmdBox.classList.remove('listening');
+      cmdBox.classList.add('processing');
+      listenState.textContent = 'Processing…';
+      routeCommand(e.results[e.results.length - 1][0].transcript);
+    };
 
-    if (recog) {
-      recog.continuous = true;
-      recog.interimResults = false;
-      recog.lang = 'en-US';
+    recog.onend = () => {
+      cmdBox.classList.remove('processing');
+      listenState.textContent = 'Ready';
+      setTimeout(() => recog.start(), 300);
+    };
 
-      recog.onstart = () => {
-        cmdBox.classList.remove('processing');
-        cmdBox.classList.add('listening');
-        listenState.innerHTML = 'Listening<span class="pulse"></span>';
-      };
+    recog.start();
+  }
+</script>
 
-      recog.onend = () => {
-        cmdBox.classList.remove('listening');
-        listenState.textContent = 'Ready';
-        setTimeout(() => recog.start(), 300); // re-arm mic
-      };
-
-      recog.onresult = e => {
-        cmdBox.classList.remove('listening');
-        cmdBox.classList.add('processing');
-        listenState.textContent = 'Processing…';
-        const text = e.results[e.results.length - 1][0].transcript;
-        routeCommand(text);
-      };
-
-      recog.start();
-    } else {
-      listenState.textContent = 'Voice not supported in this browser.';
-    } // auto-restart
-
-      recog.onresult = e => {
-        const text = e.results[e.results.length - 1][0].transcript;
-        routeCommand(text);
-      };
-
-      recog.start();
-    } else {
-      listenState.textContent = 'Voice not supported in this browser.';
-    } recog.start();
-    } else {
-      document.getElementById('listenState').textContent = 'Voice not supported in this browser.';
-    }
-
-    function speak(text) {
-      const u = new SpeechSynthesisUtterance(text);
-      // Prefer natural voices if available
-      const voices = speechSynthesis.getVoices();
-      const preferred = voices.find(v => /Google|Natural|Neural/i.test(v.name)) || voices.find(v => v.lang === 'en-IN') || voices[0];
-      if (preferred) u.voice = preferred;
-      u.rate = 0.95; // less robotic, still executive
-      u.pitch = 1;
-      u.lang = 'en-IN';
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    }
-
-    // ===== RENDER HELPERS =====
-    const kpisEl = document.getElementById('kpis');
-    const insightEl = document.getElementById('insight');
-    const riskEl = document.getElementById('risk');
-    const titleEl = document.getElementById('panelTitle');
-
-    function money(v) { return '₹' + (v/10000000).toFixed(2) + ' Cr'; }
-    function lakhs(v) { return '₹' + (v/100000).toFixed(0) + ' L'; }
-
-    function setRisk(level) {
-      riskEl.className = 'risk ' + level;
-      riskEl.textContent = 'RISK LEVEL: ' + level.toUpperCase();
-    }
-
-    function renderKPIs(items) {
-      kpisEl.innerHTML = '';
-      items.forEach(([k,v]) => {
-        const kEl = document.createElement('div'); kEl.className = 'k'; kEl.textContent = k;
-        const vEl = document.createElement('div'); vEl.className = 'v'; vEl.textContent = v;
-        kpisEl.appendChild(kEl); kpisEl.appendChild(vEl);
-      });
-    }
-
-    // ===== COMMAND ROUTER =====
-    function routeCommand(text) {
-      const t = text.toLowerCase().trim();
-      // Normalize common variants
-      if (t.includes('what needs attention') || t.includes('needs attention')) return attention();
-      if (t.includes('revenue performance') || t.includes('revenue status')) return revenue();
-      if (t.includes('revenue quality')) return quality();
-      if (t.includes('unbilled exposure') || t.includes('unbilled') || t.includes('yet unbilled')) return unbilled();
-      if (t.includes('salary pressure') || t.includes('salary')) return salary();
-      if (t.includes('profitability') || t.includes('profit')) return profitability();
-    }
-
-    // ===== VIEWS =====
-    function revenue() {
-      titleEl.textContent = 'REVENUE PERFORMANCE — APR–SEP 2025';
-      renderKPIs([
-        ['Net Target (6 months)', money(DATA.revenue.target)],
-        ['Achieved', money(DATA.revenue.achieved)],
-        ['Achievement', DATA.revenue.achievementPct + '%'],
-        ['Balance to Close', money(DATA.revenue.balance)],
-        ['Required Monthly Run Rate', lakhs(DATA.revenue.reqRunRate)]
-      ]);
-      insightEl.textContent = 'Revenue performance is materially behind plan. Achieving the six-month target will require accelerated billing in the remaining period.';
-      setRisk('high');
-      speak('Revenue achievement stands at twenty eight point two five percent against the six month target. A balance of five point seven four crore remains to be closed. This requires a sustained monthly run rate of approximately ninety six lakhs.');
-    }
-
-    function quality() {
-      titleEl.textContent = 'REVENUE QUALITY';
-      renderKPIs([
-        ['Reported Revenue', money(DATA.revenue.achieved)],
-        ['Accrued Achieved', money(DATA.quality.accruedAchieved)]
-      ]);
-      insightEl.textContent = 'A portion of achieved revenue is accrual-driven and includes unbilled components. Timely conversion into invoicing will be important to sustain performance.';
-      setRisk('mod');
-      speak('A portion of achieved revenue is accrual driven and includes unbilled components. Timely conversion into invoicing will be important to sustain performance.');
-    }
-
-    function unbilled() {
-      titleEl.textContent = 'UNBILLED EXPOSURE — AS OF SEP 2025';
-      renderKPIs([
-        ['Total Unbilled', money(DATA.unbilled.total)],
-        ['Concentration', DATA.unbilled.concentration]
-      ]);
-      insightEl.textContent = 'Unbilled exposure remains elevated and concentrated, increasing dependence on timely billing actions for revenue realisation.';
-      setRisk('mod');
-      speak('Unbilled exposure stands at three point five three crore and is concentrated among a limited number of retainers. This increases dependence on timely billing actions for revenue realisation.');
-    }
-
-    function salary() {
-      titleEl.textContent = 'COST & PROFITABILITY';
-      renderKPIs([
-        ['Salary Disbursed', money(DATA.salary.disbursed)],
-        ['Salary to Revenue Ratio', DATA.salary.ratio + '%'],
-        ['Actual Profit Margin', DATA.salary.profit + '%'],
-        ['Targeted Margin', DATA.salary.targetProfit + '%']
-      ]);
-      insightEl.textContent = 'Salary costs are high relative to revenue, exerting pressure on profitability. Margin recovery depends on revenue scale-up and billing discipline.';
-      setRisk('high');
-      speak('Salary costs currently constitute a high proportion of revenue. This has resulted in a profit margin of fifteen point nine three percent, significantly below the targeted forty percent. Margin recovery will depend on revenue scale up and billing discipline.');
-    }
-
-    function profitability() { salary(); }
-
-    function attention() {
-      titleEl.textContent = 'EXECUTIVE SUMMARY';
-      renderKPIs([]);
-      insightEl.textContent = 'Immediate attention is required on accelerating revenue closure against the six-month target. Elevated unbilled exposure and high salary cost ratios continue to exert pressure on profitability.';
-      setRisk('high');
-      speak('Immediate attention is required on accelerating revenue closure against the six month target. Elevated unbilled exposure and high salary cost ratios continue to exert pressure on profitability.');
-    }
-
-    // Default view
-    revenue();
-  </script>
 </body>
 </html>
+
 
