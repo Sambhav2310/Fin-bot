@@ -149,7 +149,6 @@
     } else {
       listenState.textContent = 'Voice not supported in this browser.';
     } // auto-restart
-      };
 
       recog.onresult = e => {
         const text = e.results[e.results.length - 1][0].transcript;
@@ -277,3 +276,4 @@
   </script>
 </body>
 </html>
+
