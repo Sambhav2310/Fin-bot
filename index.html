@@ -90,11 +90,31 @@
         <div class="insight">
           Revenue performance<br/>Revenue quality<br/>Unbilled exposure<br/>Salary pressure<br/>Profitability outlook<br/>What needs attention
         </div>
+        <div class="panel">
+  <h3>SUPPORTING VISUAL</h3>
+  <img id="vizImage"
+       src=""
+       alt="Finance Visual"
+       style="width:100%; border-radius:10px; margin-top:10px;">
+</div>
       </div>
     </section>
   </main>
 
   <script>
+
+    const VISUALS = {
+  revenue: 'assets/Revenue.png',
+  unbilled: 'assets/Unbilled.png',
+  attention: 'assets/Summary.png'
+};
+
+const vizImage = document.getElementById('vizImage');
+
+function showVisual(key) {
+  vizImage.src = VISUALS[key];
+}
+
   // ===== DATA =====
   const DATA = {
     revenue: {
@@ -153,6 +173,7 @@
 
   // ===== VIEWS =====
   function revenue() {
+    showVisual('revenue');
     titleEl.textContent = 'REVENUE PERFORMANCE — APR–SEP 2025';
     renderKPIs([
       ['Net Target (6 months)', money(DATA.revenue.target)],
@@ -182,6 +203,7 @@
   }
 
   function unbilled() {
+    showVisual('unbilled');
     titleEl.textContent = 'UNBILLED EXPOSURE — AS OF SEP 2025';
     renderKPIs([
       ['Total Unbilled', money(DATA.unbilled.total)],
@@ -212,6 +234,7 @@
   function profitability() { salary(); }
 
   function attention() {
+    showVisual('summary');
     titleEl.textContent = 'EXECUTIVE SUMMARY';
     renderKPIs([]);
     insightEl.textContent =
@@ -301,6 +324,7 @@
 
 </body>
 </html>
+
 
 
 
