@@ -234,7 +234,7 @@ function showVisual(key) {
   function profitability() { salary(); }
 
   function attention() {
-    showVisual('summary');
+    showVisual('attention');
     titleEl.textContent = 'EXECUTIVE SUMMARY';
     renderKPIs([]);
     insightEl.textContent =
@@ -263,7 +263,7 @@ function showVisual(key) {
     return quality();
   }
 
-  if (t.includes('unbilled')) {
+  if (t.includes('yet unbilled')) {
     return unbilled();
   }
 
@@ -324,6 +324,7 @@ function showVisual(key) {
 
 </body>
 </html>
+
 
 
 
